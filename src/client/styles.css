@@ -1,1 +1,6 @@
 @import url('node_modules/bulma/css/bulma.css');
+
+body {
+    background-image: url('assets/background.png');
+    height: 100vh;
+}

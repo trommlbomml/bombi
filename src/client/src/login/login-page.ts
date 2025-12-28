@@ -5,8 +5,8 @@ import { customElement } from "lit/decorators.js";
 export class LoginPage extends LitElement {
 render() {
     return html`
-    <div class="container is-max-desktop mt-6">
-      <div class="card">
+    <div class="is-flex flex-direction-row">
+      <div class="card mt-6 ml-auto mr-auto">
         <div class="card-content">
           <div class="content">
             <h2>
@@ -27,6 +27,9 @@ render() {
               </div>
               <button class="button is-primary">
                 Login
+              </button>
+              <button class="button is-ghost">
+                Register
               </button>
             </form>
           </div>
