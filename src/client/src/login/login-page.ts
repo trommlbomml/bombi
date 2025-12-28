@@ -5,26 +5,34 @@ import { customElement } from "lit/decorators.js";
 export class LoginPage extends LitElement {
 render() {
     return html`
-      <div class=login-page>
-        <h2>Login to Bombi</h2>
-        <form>
-          <div class="form-row">
-            <label>
-                Username
-            </label>
-            <input type="text">
+    <div class="container is-max-desktop mt-6">
+      <div class="card">
+        <div class="card-content">
+          <div class="content">
+            <h2>
+              Bombi Login
+            </h2>
+            <form>
+              <div class="field">
+                <label class="label">
+                  Username
+                </label>
+                <input class="input" type="text">
+              </div>
+              <div class="field">
+                <label class="label">
+                  Password
+                </label>
+                <input class="input" type="password">
+              </div>
+              <button class="button is-primary">
+                Login
+              </button>
+            </form>
           </div>
-          <div class="form-row">
-              <label>
-                Password
-            </label>
-            <input type="text">
-          </div>
-        <button>
-          Login
-        </button>
-        </form>
+        </div>
       </div>
+    </div>
     `; 
   }
 
