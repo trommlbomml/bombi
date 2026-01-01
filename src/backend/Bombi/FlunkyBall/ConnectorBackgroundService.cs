@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FlunkyBall;
 
@@ -14,10 +15,7 @@ public interface IGameServer
 
 internal sealed class ConnectorBackgroundService : BackgroundService
 {
-    private const int MaxClients = 30;
-    private const double FramesPerSecond = 30;
-    private const double FrameTimeSeconds = 1.0f / FramesPerSecond;
-    
+    private readonly double _frameTimeSeconds;
     private readonly List<Client> _internalClients = new();
     private readonly List<IClient> _clients = new();
     private readonly ConcurrentQueue<SocketMessage> _broadCastMessages = new();
@@ -26,17 +24,21 @@ internal sealed class ConnectorBackgroundService : BackgroundService
     private readonly ILogger<ConnectorBackgroundService> _logger;
     private readonly IAuthService _authService;
     private readonly IGameServer _gameServer;
+    private readonly IOptions<FlunkyBallSettings> _settings;
     private readonly IncomingClientsQueue _incomingClientsQueue;
 
     public ConnectorBackgroundService(ILogger<ConnectorBackgroundService> logger, 
         IAuthService authService, 
         IGameServer gameServer,
+        IOptions<FlunkyBallSettings> settings,
         IncomingClientsQueue incomingClientsQueue)
     {
         _logger = logger;
         _authService = authService;
         _gameServer = gameServer;
+        _settings = settings;
         _incomingClientsQueue = incomingClientsQueue;
+        _frameTimeSeconds = 1.0f / _settings.Value.FixedServerFramesPerSecond;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -64,10 +66,10 @@ internal sealed class ConnectorBackgroundService : BackgroundService
                 MoveDisconnectedClientsToRemovalQueue();
                 SpreadNextBroadCastMessage();
 
-                _gameServer.RunFrame(_clients, FrameTimeSeconds, serverTimeMilliseconds);
+                _gameServer.RunFrame(_clients, _frameTimeSeconds, serverTimeMilliseconds);
                 runFrameStopwatch.Stop();
             
-                var pauseTime = FrameTimeSeconds * 1000.0f - runFrameStopwatch.ElapsedMilliseconds;
+                var pauseTime = _frameTimeSeconds * 1000.0f - runFrameStopwatch.ElapsedMilliseconds;
                 if (pauseTime > 0)
                 {
                     await Task.Delay(TimeSpan.FromMilliseconds(pauseTime), stoppingToken);
@@ -115,9 +117,10 @@ internal sealed class ConnectorBackgroundService : BackgroundService
             _authService, 
             OnClientStateChanged,
             _logger,
+            _settings,
             stoppingToken);
 
-        if (_internalClients.Count >= MaxClients)
+        if (_internalClients.Count >= _settings.Value.MaxClients)
         {
             _logger.LogInformation("Server full, no more clients can join.");
             _clientsToClose.Enqueue(client);

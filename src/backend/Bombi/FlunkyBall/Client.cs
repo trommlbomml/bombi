@@ -1,4 +1,5 @@
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FlunkyBall;
 
@@ -14,22 +15,19 @@ public interface IClient
     string Name { get; }
 
     void EnqueueMessage(SocketMessage socketMessage);
-
-    void EnqueueChunkDataMessage(SocketMessage socketMessage);
+    
+    void EnqueueMessage(int channelIndex, SocketMessage socketMessage);
 
     SocketMessage? GetNextMessage();
-
-    SocketMessage? GetNextChunkLoadRequest();
-
-    int MessageCount { get; }
+    
+    SocketMessage? GetNextMessage(int channelIndex);
 }
 
 internal sealed class Client : IClient
 {
     private const int ClientHeartbeatTimeoutSeconds = 10;
     
-    private readonly ClientSocketChannel _chunkDataChannel;
-    private readonly ClientSocketChannel _updateChannel;
+    private readonly List<ClientSocketChannel> _socketChannels = [];
     private readonly Action<Client, ClientState> _stateChanged;
     private readonly Task _communicationTask;
 
@@ -38,69 +36,63 @@ internal sealed class Client : IClient
         IAuthService authService,
         Action<Client, ClientState> stateChanged,
         ILogger<ConnectorBackgroundService> logger,
+        IOptions<FlunkyBallSettings> settings,
         CancellationToken stoppingToken)
     {
-        if (client.ChunkDataSocket == null) throw new InvalidOperationException("Chunk Data Socket null");
-        if (client.UpdateSocket == null) throw new InvalidOperationException("Update Socket null");
-        
         var user = authService.GetUser(client.IdentityToken);
         Id = user.Id;
         Name = user.Name;
         _stateChanged = stateChanged;
         
-        _chunkDataChannel = new ClientSocketChannel(
-            Id,
-            client.ChunkDataSocket, 
-            client.ChunkDataSocketTaskCompletionSource, 
-            logger, 
-            ClientHeartbeatTimeoutSeconds);
-        _updateChannel = new ClientSocketChannel(
-            Id,
-            client.UpdateSocket,
-            client.UpdateSocketTaskCompletionSource,
-            logger,
-            null);
+        _socketChannels.AddRange(
+            client.IncomingSockets.Select((incoming, index) => new ClientSocketChannel(
+                Id, 
+                incoming, 
+                logger, 
+                settings.Value.WebSocketChannels[index],
+                index == settings.Value.HeartbeatChannelIndex ? settings.Value.ClientHeartbeatTimeout : null)
+            )
+        );
 
         _communicationTask = StartCommunicationAsync(stoppingToken);
 
         State = ClientState.Connected;
     }
 
-    public int Id { get; private set; }
+    public int Id { get; }
     
     public ClientState State { get; set; }
 
     public string Name { get; private set; }
+    
+    public void EnqueueMessage(int channelIndex, SocketMessage socketMessage)
+        => _socketChannels[channelIndex].EnqueueMessage(socketMessage);
 
     public void EnqueueMessage(SocketMessage socketMessage) 
-        => _updateChannel.EnqueueMessage(socketMessage);
+        => EnqueueMessage(0, socketMessage);
     
-    public void EnqueueChunkDataMessage(SocketMessage socketMessage) 
-        => _chunkDataChannel.EnqueueMessage(socketMessage);
+    
+    public SocketMessage? GetNextMessage(int channelIndex)
+        => _socketChannels[channelIndex].GetNextMessage();
 
     public SocketMessage? GetNextMessage()
-        => _updateChannel.GetNextMessage();
-    
-    public SocketMessage? GetNextChunkLoadRequest()
-        => _chunkDataChannel.GetNextMessage();
-
-    public int MessageCount => _updateChannel.MessageCount;
+        => GetNextMessage(0);
 
     public async Task CloseAsync()
     {
-        _chunkDataChannel.StartComplete();
-        _updateChannel.StartComplete();
+        _socketChannels.ForEach(c => c.StartComplete());
         await _communicationTask;
     }
 
     private async Task StartCommunicationAsync(CancellationToken stoppingToken)
     {
         await Task.WhenAll(
-            _chunkDataChannel.StartReadMessagesAsync(stoppingToken),
-            _updateChannel.StartReadMessagesAsync(stoppingToken),
-            _chunkDataChannel.StartWriteMessagesAsync(stoppingToken),
-            _updateChannel.StartWriteMessagesAsync(stoppingToken)
-        ).ConfigureAwait(false);
+            _socketChannels.SelectMany(c => new[]
+            {
+                c.StartReadMessagesAsync(stoppingToken),
+                c.StartWriteMessagesAsync(stoppingToken)
+            }
+            )).ConfigureAwait(false);
             
         State = ClientState.Disconnected;
     }

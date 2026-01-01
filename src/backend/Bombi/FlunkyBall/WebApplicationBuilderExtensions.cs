@@ -7,6 +7,8 @@ public static class WebApplicationBuilderExtensions
 {
     public static WebApplicationBuilder AddGameServer(this WebApplicationBuilder builder)
     {
+        builder.Services.Configure<FlunkyBallSettings>(
+            builder.Configuration.GetSection("FlunkyBall"));
         builder.Services.AddHostedService<ConnectorBackgroundService>();
         return builder;
     }

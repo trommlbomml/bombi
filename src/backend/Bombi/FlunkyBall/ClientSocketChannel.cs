@@ -14,7 +14,7 @@ internal sealed class ClientSocketChannel
     private readonly WebSocket _socket;
     private readonly TaskCompletionSource _taskCompletionSource;
     private readonly ILogger<ConnectorBackgroundService> _logger;
-    private readonly int? _heartBeatTimeout;
+    private readonly TimeSpan? _heartBeatTimeout;
     private readonly byte[] _receiveBuffer = new byte[1024];
     private readonly byte[] _messageBuffer = new byte[1024];
     private readonly ConcurrentQueue<SocketMessage> _incomingMessages = new();
@@ -22,17 +22,20 @@ internal sealed class ClientSocketChannel
 
     public ClientSocketChannel(
         int clientId,
-        WebSocket socket, 
-        TaskCompletionSource taskCompletionSource,
+        IncomingSocket incomingSocket,
         ILogger<ConnectorBackgroundService> logger,
-        int? heartBeatTimeout)
+        string name,
+        TimeSpan? heartBeatTimeout)
     {
         _clientId = clientId;
-        _socket = socket;
-        _taskCompletionSource = taskCompletionSource;
+        _socket = incomingSocket.Socket;
+        _taskCompletionSource = incomingSocket.TaskCompletionSource;
         _logger = logger;
         _heartBeatTimeout = heartBeatTimeout;
+        Name = name;
     }
+    
+    public string Name { get; }
 
     public SocketMessage? GetNextMessage()
         => _incomingMessages.TryDequeue(out var msg) ? msg : null;
@@ -55,7 +58,7 @@ internal sealed class ClientSocketChannel
             {
                 if (_heartBeatTimeout.HasValue)
                 {
-                    var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(_heartBeatTimeout.Value));
+                    var cancellationTokenSource = new CancellationTokenSource(_heartBeatTimeout.Value);
                     var newStoppingToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, stoppingToken);
                     
                     var message = await ReadMessageFromSocketAsync(newStoppingToken.Token).ConfigureAwait(false);
