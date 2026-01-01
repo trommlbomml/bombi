@@ -30,6 +30,7 @@ internal sealed class Client : IClient
     private readonly List<ClientSocketChannel> _socketChannels = [];
     private readonly Action<Client, ClientState> _stateChanged;
     private readonly Task _communicationTask;
+    private ClientState _state;
 
     public Client(
         IncomingClient client, 
@@ -60,8 +61,19 @@ internal sealed class Client : IClient
     }
 
     public int Id { get; }
-    
-    public ClientState State { get; set; }
+
+    public ClientState State
+    {
+        get => _state;
+        set
+        {
+            if (_state != value)
+            {
+                _state = value;
+                _stateChanged(this, _state);
+            }
+        }
+    }
 
     public string Name { get; private set; }
     

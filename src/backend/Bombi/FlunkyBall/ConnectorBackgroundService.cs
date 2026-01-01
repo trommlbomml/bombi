@@ -6,7 +6,12 @@ using Microsoft.Extensions.Options;
 
 namespace FlunkyBall;
 
-internal sealed class ConnectorBackgroundService : BackgroundService
+public interface IGameServerContext
+{
+    void EnqueueBroadCastMessage(SocketMessage message);
+}
+
+internal sealed class ConnectorBackgroundService : BackgroundService, IGameServerContext
 {
     private readonly double _frameTimeSeconds;
     private readonly List<Client> _internalClients = new();
@@ -16,19 +21,21 @@ internal sealed class ConnectorBackgroundService : BackgroundService
     private readonly ConcurrentQueue<Client> _clientsToClose = new();
     private readonly ILogger<ConnectorBackgroundService> _logger;
     private readonly IAuthService _authService;
-    private readonly IGameServer _gameServer;
+    private readonly Func<IGameServer> _gameServerFunc;
     private readonly IOptions<FlunkyBallSettings> _settings;
     private readonly IncomingClientsQueue _incomingClientsQueue;
+    
+    private IGameServer? _gameServer;
 
     public ConnectorBackgroundService(ILogger<ConnectorBackgroundService> logger, 
         IAuthService authService, 
-        IGameServer gameServer,
+        Func<IGameServer> gameServerFunc,
         IOptions<FlunkyBallSettings> settings,
         IncomingClientsQueue incomingClientsQueue)
     {
         _logger = logger;
         _authService = authService;
-        _gameServer = gameServer;
+        _gameServerFunc = gameServerFunc;
         _settings = settings;
         _incomingClientsQueue = incomingClientsQueue;
         _frameTimeSeconds = 1.0f / _settings.Value.FixedServerFramesPerSecond;
@@ -38,7 +45,8 @@ internal sealed class ConnectorBackgroundService : BackgroundService
     {
         try
         {
-            await Task.Run(() => _gameServer.PrepareWorld(stoppingToken), stoppingToken);
+            _gameServer = _gameServerFunc();
+            await Task.Run(() => _gameServer.PrepareWorld(this, stoppingToken), stoppingToken);
 
             var sw = Stopwatch.StartNew();
             var serverTime = Stopwatch.StartNew();
@@ -59,7 +67,7 @@ internal sealed class ConnectorBackgroundService : BackgroundService
                 MoveDisconnectedClientsToRemovalQueue();
                 SpreadNextBroadCastMessage();
 
-                _gameServer.RunFrame(_clients, _frameTimeSeconds, serverTimeMilliseconds);
+                _gameServer.RunFrame(this, _clients, _frameTimeSeconds, serverTimeMilliseconds);
                 runFrameStopwatch.Stop();
             
                 var pauseTime = _frameTimeSeconds * 1000.0f - runFrameStopwatch.ElapsedMilliseconds;
@@ -127,20 +135,26 @@ internal sealed class ConnectorBackgroundService : BackgroundService
 
     private void OnClientStateChanged(Client client, ClientState state)
     {
-        var clientName = client.Name ?? "<No Name>";
+        if (_gameServer == null) throw new InvalidOperationException("Game Server is null");
+        
         switch (state)
         {
             case ClientState.Connected:
-                _broadCastMessages.Enqueue(new SocketMessage($"joined:{clientName}"));
-                _logger.LogInformation($"Client '{clientName}' connected to the server.");
+                _gameServer.OnClientConnected(this, client);
+                _logger.LogInformation($"Client '{client.Name}' connected to the server.");
                 break;
             case ClientState.Disconnected:
-                _broadCastMessages.Enqueue(new SocketMessage($"left:{clientName}"));
-                _logger.LogInformation($"Client '{clientName}' Disconnected from the server.");
+                _gameServer.OnClientDisconnected(this, client);
+                _logger.LogInformation($"Client '{client.Name}' Disconnected from the server.");
                 _disconnectedClients.Enqueue(client);
                 break;
             default:
                 throw new ArgumentOutOfRangeException(nameof(state), state, null);
         }
+    }
+
+    public void EnqueueBroadCastMessage(SocketMessage message)
+    {
+        _broadCastMessages.Enqueue(message);
     }
 }
