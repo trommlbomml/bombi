@@ -6,13 +6,6 @@ using Microsoft.Extensions.Options;
 
 namespace FlunkyBall;
 
-public interface IGameServer
-{
-    void PrepareWorld(CancellationToken stoppingToken);
-    
-    void RunFrame(IList<IClient> clients, double frameTimeSeconds, long serverTimeMilliseconds);
-}
-
 internal sealed class ConnectorBackgroundService : BackgroundService
 {
     private readonly double _frameTimeSeconds;
