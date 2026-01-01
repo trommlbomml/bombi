@@ -7,6 +7,9 @@ export class AppElement extends LitElement {
     render() {
         return html`
         <login-page></login-page>
+        <lobby-page></lobby-page>
+        <session-page></session-page>
+        <game-page></game-page>
         `; 
   }
 
