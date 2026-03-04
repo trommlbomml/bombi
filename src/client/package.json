@@ -13,8 +13,8 @@
     "vite": "^7.2.4"
   },
   "dependencies": {
+    "@lit/context": "^1.1.6",
     "bulma": "^1.0.4",
-    "lit": "^3.3.2",
-    "phaser": "^3.90.0"
+    "zustand": "^5.0.11"
   }
 }

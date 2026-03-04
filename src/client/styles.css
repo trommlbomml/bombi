@@ -4,3 +4,21 @@ body {
     background-image: url('assets/background.png');
     height: 100vh;
 }
+
+.scrollable-content-y-80 {
+    max-height: 80vh;
+    overflow-y: scroll;
+}
+
+.page {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+}
+
+.page > :first-child {
+    flex: 1;
+}
