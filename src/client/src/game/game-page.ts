@@ -1,7 +1,8 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import {appStore} from "../instrumentation/app-state.ts";
-import BootScene from "./boot-scene.ts";
+import GameScene from "./game-scene.ts";
+import {SCREEN_HEIGHT, SCREEN_WIDTH} from "./constants.ts";
 
 @customElement('game-page')
 export class GamePage extends LitElement {
@@ -25,10 +26,10 @@ export class GamePage extends LitElement {
                     const config: Phaser.Types.Core.GameConfig = {
                         type: Phaser.AUTO,
                         parent: "game",
-                        width: 800,
-                        height: 600,
+                        width: SCREEN_WIDTH,
+                        height: SCREEN_HEIGHT,
                         backgroundColor: "#1d1d1d",
-                        scene: [BootScene]
+                        scene: [GameScene]
                     }
 
                     this.game = new Phaser.Game(config);
