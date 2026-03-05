@@ -1,8 +1,9 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import {appStore} from "../instrumentation/app-state.ts";
-@customElement('game-element')
-export class GameElement extends LitElement {
+
+@customElement('game-page')
+export class GamePage extends LitElement {
     @property({ type: Boolean })
     isVisible;
 
@@ -34,5 +35,8 @@ export class GameElement extends LitElement {
                 </div>
     `;
         }
+    }
+    protected createRenderRoot() {
+        return this;
     }
 }

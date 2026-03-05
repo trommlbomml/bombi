@@ -10,6 +10,6 @@ export interface AppState {
 
 export const appStore = createStore<AppState>(set => ({
     state: 'LoggedOut',
-    login: () => set({state: 'PreLobby'}),
+    login: () => set({state: 'InGame'}),
     logout: () => set({ state: 'LoggedOut' })
 }));
