@@ -1,13 +1,15 @@
 ﻿import { createStore } from 'zustand/vanilla';
 
+export type GameState = 'LoggedOut' | 'PreLobby' | 'Lobby' |  'InGame';
+
 export interface AppState {
-    readonly loggedIn: boolean;
+    readonly state: GameState;
     login: () => void;
     logout: () => void;
 }
 
 export const appStore = createStore<AppState>(set => ({
-    loggedIn: false,
-    login: () => set({loggedIn: true}),
-    logout: () => set({ loggedIn: true })
+    state: 'LoggedOut',
+    login: () => set({state: 'PreLobby'}),
+    logout: () => set({ state: 'LoggedOut' })
 }));

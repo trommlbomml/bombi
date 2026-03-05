@@ -23,7 +23,7 @@ export class SessionPage extends LitElement {
     connectedCallback() {
         super.connectedCallback();
         this.unsubscribe = appStore.subscribe(state => {
-            this.isVisible = state.loggedIn;
+            this.isVisible = state.state === 'PreLobby';
         });
 
         querySessions()
