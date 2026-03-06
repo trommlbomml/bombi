@@ -1,16 +1,22 @@
 import Phaser from "phaser"
-import {SCREEN_HEIGHT, SCREEN_WIDTH} from "./constants.ts";
+import {SKIN_TEXTURE_KEY, TILE_HEIGHT, TILE_WIDTH} from "./constants.ts";
+import {Level} from "./level.ts";
 
 export default class GameScene extends Phaser.Scene {
+  private _level?: Level;
+
   constructor() {
     super("GameScene")
   }
 
   preload() {
-    this.load.image("skin", "/assets/defaultskin.png")
+    this.load.spritesheet(SKIN_TEXTURE_KEY, "/assets/defaultskin.png", {
+      frameWidth: TILE_WIDTH,
+      frameHeight: TILE_HEIGHT
+    });
   }
 
   create() {
-    this.add.image(SCREEN_WIDTH/2, SCREEN_HEIGHT/2, "skinn")
+    this._level = new Level(this);
   }
 }
