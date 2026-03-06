@@ -27,10 +27,12 @@ const BASE_LAYER: Array<number> = [
 ];
 
 export class Level {
+    private readonly container: Phaser.GameObjects.Container;
     private readonly baseLayer: Array<Phaser.GameObjects.Sprite> = [];
     private readonly boxLayer: Array<Box|null> = [];
 
     constructor(scene: Phaser.Scene) {
+        this.container = scene.add.container(0, TILE_HEIGHT);
         this.boxLayer = Array(LEVEL_WIDTH * LEVEL_HEIGHT).fill(null);
 
         for(let y = 0; y < LEVEL_HEIGHT; y++) {
@@ -42,11 +44,13 @@ export class Level {
                     tileId === 2 ? 2 : 0);
                 sprite.setOrigin(0, 0);
                 sprite.setDepth(LAYER_BASE);
+                this.container.add(sprite);
 
                 this.baseLayer.push(sprite);
 
                 if (tileId === 1 && Phaser.Math.FloatBetween(0, 1) > 1 - BOX_SPAWN_PROBABILITY) {
-                    this.boxLayer[y * LEVEL_WIDTH + x] = new Box(scene, x, y);
+                    const box = new Box(scene, this.container, x, y);
+                    this.boxLayer[y * LEVEL_WIDTH + x] = box;
                 }
             }
         }

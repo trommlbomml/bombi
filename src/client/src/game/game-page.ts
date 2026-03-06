@@ -29,7 +29,11 @@ export class GamePage extends LitElement {
                         width: SCREEN_WIDTH,
                         height: SCREEN_HEIGHT,
                         backgroundColor: "#1d1d1d",
-                        scene: [GameScene]
+                        scene: [GameScene],
+                        scale: {
+                            mode: Phaser.Scale.FIT,
+                            autoCenter: Phaser.Scale.CENTER_BOTH
+                        }
                     }
 
                     this.game = new Phaser.Game(config);

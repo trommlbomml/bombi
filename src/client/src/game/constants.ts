@@ -1,6 +1,6 @@
-﻿export const SCREEN_WIDTH = 800;
+﻿export const SCREEN_WIDTH = 480;
 
-export const SCREEN_HEIGHT = 600;
+export const SCREEN_HEIGHT = 448;
 
 export const LEVEL_WIDTH = 15;
 export const LEVEL_HEIGHT = 13;
