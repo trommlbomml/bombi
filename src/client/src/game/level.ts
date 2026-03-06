@@ -1,5 +1,14 @@
 ﻿import Phaser from "phaser"
-import {LEVEL_HEIGHT, LEVEL_WIDTH, SKIN_TEXTURE_KEY, TILE_HEIGHT, TILE_WIDTH} from "./constants.ts";
+import {
+    BOX_SPAWN_PROBABILITY,
+    LAYER_BASE,
+    LEVEL_HEIGHT,
+    LEVEL_WIDTH,
+    SKIN_TEXTURE_KEY,
+    TILE_HEIGHT,
+    TILE_WIDTH
+} from "./constants.ts";
+import {Box} from "./box.ts";
 
 const BASE_LAYER: Array<number> = [
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
@@ -19,8 +28,11 @@ const BASE_LAYER: Array<number> = [
 
 export class Level {
     private readonly baseLayer: Array<Phaser.GameObjects.Sprite> = [];
+    private readonly boxLayer: Array<Box|null> = [];
 
     constructor(scene: Phaser.Scene) {
+        this.boxLayer = Array(LEVEL_WIDTH * LEVEL_HEIGHT).fill(null);
+
         for(let y = 0; y < LEVEL_HEIGHT; y++) {
             for(let x = 0; x < LEVEL_WIDTH; x++) {
                 const tileId = BASE_LAYER[y * LEVEL_WIDTH + x];
@@ -29,10 +41,16 @@ export class Level {
                     y * TILE_HEIGHT, SKIN_TEXTURE_KEY,
                     tileId === 2 ? 2 : 0);
                 sprite.setOrigin(0, 0);
+                sprite.setDepth(LAYER_BASE);
 
                 this.baseLayer.push(sprite);
+
+                if (tileId === 1 && Phaser.Math.FloatBetween(0, 1) > 1 - BOX_SPAWN_PROBABILITY) {
+                    this.boxLayer[y * LEVEL_WIDTH + x] = new Box(scene, x, y);
+                }
             }
         }
+
     }
 
 }
