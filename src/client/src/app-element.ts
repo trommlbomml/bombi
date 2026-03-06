@@ -9,10 +9,10 @@ export class AppElement extends LitElement {
 
     render() {
         return html`
+            <game-page class="page"></game-page>
         <login-page class="page"></login-page>
         <lobby-page class="page"></lobby-page>
         <session-page class="page"></session-page>
-        <game-page class="page"></game-page>
         `; 
   }
 

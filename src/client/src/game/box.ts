@@ -1,5 +1,5 @@
 ﻿import Phaser from "phaser"
-import {LAYER_FRINGE, SKIN_TEXTURE_KEY, TILE_HEIGHT, TILE_WIDTH} from "./constants.ts";
+import {LAYER_FRINGE, TILESET_TEXTURE_KEY, TILE_HEIGHT, TILE_WIDTH} from "./constants.ts";
 
 export class Box {
     private readonly sprite: Phaser.GameObjects.Sprite;
@@ -7,7 +7,7 @@ export class Box {
         this.sprite = scene.add.sprite(
             tileX * TILE_WIDTH,
             tileY * TILE_HEIGHT,
-            SKIN_TEXTURE_KEY,
+            TILESET_TEXTURE_KEY,
             1);
         this.sprite.setOrigin(0, 0);
         this.sprite.setDepth(LAYER_FRINGE);
