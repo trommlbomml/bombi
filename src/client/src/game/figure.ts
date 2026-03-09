@@ -1,11 +1,43 @@
 ﻿import Phaser from "phaser"
 import {tileXToWorldXCentered, tileYoWorldYCentered} from "./functions.ts";
-import {FIGURE_MOVEMENT_SPEED, FIGURES_TEXTURE_KEY, LAYER_FRINGE} from "./constants.ts";
+import {FIGURE_ANINMATION_SPEED, FIGURE_MOVEMENT_SPEED, FIGURES_TEXTURE_KEY, LAYER_FRINGE} from "./constants.ts";
 
 export type FigureColor = 'white' | 'red' | 'blue' | 'black';
 export type FaceDirection = 'up' | 'down' | 'left' | 'right';
 
 const FRAMES_PER_ROW = 6;
+
+export function toAnimationFrame(x: number, y: number): number {
+    return y * FRAMES_PER_ROW + x;
+}
+
+function createFigureAnimation(scene: Phaser.Scene, name: string, startX: number, startY: number) {
+    scene.anims.create({
+        key: name,
+        frames: scene.anims.generateFrameNumbers(FIGURES_TEXTURE_KEY, { start: toAnimationFrame(startX, startY), end: toAnimationFrame(startX+2, startY) }),
+        frameRate: FIGURE_ANINMATION_SPEED,
+        repeat: -1
+    });
+}
+
+export function createFigureAnimations(scene: Phaser.Scene) {
+    createFigureAnimation(scene, 'white_up', 0, 0);
+    createFigureAnimation(scene, 'white_right', 0, 1);
+    createFigureAnimation(scene, 'white_down', 0, 2);
+    createFigureAnimation(scene, 'white_left', 0, 3);
+    createFigureAnimation(scene, 'blue_up', 0, 4);
+    createFigureAnimation(scene, 'blue_right', 0, 5);
+    createFigureAnimation(scene, 'blue_down', 0, 6);
+    createFigureAnimation(scene, 'blue_left', 0, 7);
+    createFigureAnimation(scene, 'red_up', 3, 0);
+    createFigureAnimation(scene, 'red_right', 3, 1);
+    createFigureAnimation(scene, 'red_down', 3, 2);
+    createFigureAnimation(scene, 'red_left', 3, 3);
+    createFigureAnimation(scene, 'black_up', 3, 4);
+    createFigureAnimation(scene, 'black_right', 3, 5);
+    createFigureAnimation(scene, 'black_down', 3, 6);
+    createFigureAnimation(scene, 'black_left', 3, 7);
+}
 
 export class Figure {
     private readonly sprite: Phaser.GameObjects.Sprite;
@@ -54,9 +86,11 @@ export class Figure {
         if (moveX !== 0 || moveY !== 0) {
             this.sprite.x += moveX * FIGURE_MOVEMENT_SPEED * elapsedSeconds;
             this.sprite.y += moveY * FIGURE_MOVEMENT_SPEED * elapsedSeconds;
-        }
 
-        this.updateCurrentFrame();
+            this.sprite.anims.play(`${this.color}_${this.faceDirection}`, true);
+        } else {
+            this.updateCurrentFrame();
+        }
     }
 
     private updateCurrentFrame(): void {
@@ -91,6 +125,6 @@ export class Figure {
 
         }
 
-        this.sprite.setFrame(y * FRAMES_PER_ROW + x);
+        this.sprite.setFrame(toAnimationFrame(x,y));
     }
 }

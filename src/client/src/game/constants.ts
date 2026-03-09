@@ -17,6 +17,8 @@ export const FIGURE_HEIGHT = 32;
 
 export const FIGURE_MOVEMENT_SPEED = TILE_WIDTH * 3;
 
+export const FIGURE_ANINMATION_SPEED = 6;
+
 export const LAYER_BASE = 1
 export const LAYER_FRINGE = 2
 

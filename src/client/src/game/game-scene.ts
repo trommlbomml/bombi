@@ -8,7 +8,7 @@ import {
   FIGURES_TEXTURE_KEY
 } from "./constants.ts";
 import {Level} from "./level.ts";
-import {Figure} from "./figure.ts";
+import {createFigureAnimations, Figure} from "./figure.ts";
 
 export default class GameScene extends Phaser.Scene {
   private level!: Level;
@@ -30,9 +30,12 @@ export default class GameScene extends Phaser.Scene {
   }
 
   create() {
+    createFigureAnimations(this);
+
     this.level = new Level(this);
     this.figure = new Figure(this, this.level.container, 'white');
     this.figure.setTilePosition(1,1);
+
   }
 
   update(_time: number, delta: number) {
