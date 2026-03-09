@@ -9,6 +9,8 @@ import {
     TILE_WIDTH
 } from "./constants.ts";
 import {Box} from "./box.ts";
+import {Bomb} from "./bomb.ts";
+import {Figure} from "./figure.ts";
 
 const BASE_LAYER: Array<number> = [
     2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,
@@ -27,11 +29,17 @@ const BASE_LAYER: Array<number> = [
 ];
 
 export class Level {
+    private readonly scene: Phaser.Scene;
+
     private readonly offsetContainer: Phaser.GameObjects.Container;
     private readonly baseLayer: Array<Phaser.GameObjects.Sprite> = [];
     private readonly boxLayer: Array<Box|null> = [];
 
+    private bombs: Array<Bomb> = [];
+
+
     constructor(scene: Phaser.Scene) {
+        this.scene = scene;
         this.offsetContainer = scene.add.container(0, TILE_HEIGHT);
         this.boxLayer = Array(LEVEL_WIDTH * LEVEL_HEIGHT).fill(null);
 
@@ -56,8 +64,25 @@ export class Level {
         }
     }
 
+    update(elapsedSeconds: number) {
+        let anyExploded = false;
+        this.bombs.forEach(b => {
+            b.update(elapsedSeconds);
+            if (b.isExploded) {
+                b.destroy();
+                anyExploded = true;
+            }
+        });
+        if (anyExploded) {
+            this.bombs = this.bombs.filter(b => !b.isExploded);
+        }
+    }
+
     get container(): Phaser.GameObjects.Container {
         return this.offsetContainer;
     }
 
+    placeBomb(figure: Figure): void {
+        this.bombs.push(new Bomb(this.scene, this, figure.tilePositionX, figure.tilePositionY));
+    }
 }

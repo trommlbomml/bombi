@@ -1,6 +1,12 @@
 ﻿import Phaser from "phaser"
-import {tileXToWorldXCentered, tileYoWorldYCentered} from "./functions.ts";
-import {FIGURE_ANINMATION_SPEED, FIGURE_MOVEMENT_SPEED, FIGURES_TEXTURE_KEY, LAYER_FRINGE} from "./constants.ts";
+import {tileXToWorldXCentered, tileYoWorldYCentered, worldXToTileX, worldYToTileY} from "./functions.ts";
+import {
+    FIGURE_ANINMATION_SPEED,
+    FIGURE_MOVEMENT_SPEED,
+    FIGURES_TEXTURE_KEY,
+    LAYER_FIGURE
+} from "./constants.ts";
+import {Level} from "./level.ts";
 
 export type FigureColor = 'white' | 'red' | 'blue' | 'black';
 export type FaceDirection = 'up' | 'down' | 'left' | 'right';
@@ -43,28 +49,40 @@ export class Figure {
     private readonly sprite: Phaser.GameObjects.Sprite;
     private readonly color: FigureColor;
     private readonly cursor: Phaser.Types.Input.Keyboard.CursorKeys;
+    private readonly level: Level;
+    private readonly placeBombKey: Phaser.Input.Keyboard.Key;
 
     private frameIndex = 0;
     private faceDirection: FaceDirection;
 
-    constructor(scene: Phaser.Scene, container: Phaser.GameObjects.Container, color: FigureColor) {
+    constructor(scene: Phaser.Scene, level: Level, color: FigureColor) {
+        this.level = level;
         this.sprite = scene.add.sprite(
             0, 0,
             FIGURES_TEXTURE_KEY,
             0);
-        this.sprite.setDepth(LAYER_FRINGE);
-        container.add(this.sprite);
+        this.sprite.setDepth(LAYER_FIGURE);
+        level.container.add(this.sprite);
 
         this.color = color;
         this.faceDirection = 'down';
         this.frameIndex = 1;
         this.updateCurrentFrame();
+        this.placeBombKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.cursor = scene.input.keyboard!.createCursorKeys();
     }
 
     setTilePosition(x: number, y: number) {
         this.sprite.setPosition(tileXToWorldXCentered(x), tileYoWorldYCentered(y))
+    }
+
+    get tilePositionX(): number {
+        return worldXToTileX(this.sprite.x);
+    }
+
+    get tilePositionY(): number {
+        return worldYToTileY(this.sprite.y);
     }
 
     update(elapsedSeconds: number) {
@@ -90,6 +108,10 @@ export class Figure {
             this.sprite.anims.play(`${this.color}_${this.faceDirection}`, true);
         } else {
             this.updateCurrentFrame();
+        }
+
+        if (Phaser.Input.Keyboard.JustDown(this.placeBombKey)) {
+            this.level.placeBomb(this);
         }
     }
 

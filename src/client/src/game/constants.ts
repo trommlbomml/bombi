@@ -21,7 +21,10 @@ export const FIGURE_ANINMATION_SPEED = 6;
 
 export const LAYER_BASE = 1
 export const LAYER_FRINGE = 2
-
-export const LAYER_EXPLOSION = 3
+export const LAYER_FIGURE = 3
+export const LAYER_EXPLOSION = 4
 
 export const BOX_SPAWN_PROBABILITY = 0.85;
+
+export const BOMB_BURNTIME = 3;
+export const BOMB_ANIMATION_SPEED = 16;

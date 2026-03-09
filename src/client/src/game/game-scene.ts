@@ -33,13 +33,14 @@ export default class GameScene extends Phaser.Scene {
     createFigureAnimations(this);
 
     this.level = new Level(this);
-    this.figure = new Figure(this, this.level.container, 'white');
+    this.figure = new Figure(this, this.level, 'white');
     this.figure.setTilePosition(1,1);
 
   }
 
   update(_time: number, delta: number) {
     const elapsedSeconds = delta / 1000;
+    this.level.update(elapsedSeconds);
     this.figure.update(elapsedSeconds);
   }
 }
