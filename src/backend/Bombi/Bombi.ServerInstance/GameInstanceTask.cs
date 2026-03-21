@@ -32,13 +32,14 @@ public sealed class GameInstanceTask
 
     public int ClientJoining(string userName)
     {
-        _joiningQueue.Enqueue(new JoiningClient(++_nextFreeClientId, userName));
-        return 1;
+        var clientId = _nextFreeClientId++;
+        _joiningQueue.Enqueue(new JoiningClient(clientId, userName));
+        return clientId;
     }
 
-    public void ClientJoined(int id, IncomingClient client)
+    public void ClientJoined(int id, IncomingNetworkClient networkClient)
     {
-        _joinedQueue.Enqueue(new JoinedClient(id, client));
+        _joinedQueue.Enqueue(new JoinedClient(id, networkClient));
     }
     
     private async Task RunGameInstanceAsync(CancellationToken cancellationToken)
@@ -49,36 +50,46 @@ public sealed class GameInstanceTask
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            if (_joiningQueue.TryDequeue(out var client))
-            {
-                _gameInstance.Clients.Add(new Client
-                {
-                    Id = client.Id,
-                    Name = client.Name,
-                    IsJoined = false
-                });
-            }
-            else if (_joinedQueue.TryDequeue(out var joinedClient))
-            {
-                _gameInstance.Clients.Single(c => c.Id == joinedClient.Id).IsJoined = true;
-                _networkClients.Add(client.Id, new NetworkClient(joinedClient.Id, joinedClient.Client,
-                    (networkClient, state) => { }, _logger, CancellationToken.None));
-            }
+            HandleClientJoining();
             
             _gameInstance.RunFrame(tick, _tickTime.TotalSeconds);
 
+            await SleepForNextTickAsync(sw,  cancellationToken).ConfigureAwait(false);
             tick++;
-            var elapsedTime = sw.Elapsed;
-            sw.Reset();
-            var waitTime = _tickTime - elapsedTime;
-            if (waitTime > TimeSpan.Zero)
+        }
+    }
+
+    private void HandleClientJoining()
+    {
+        if (_joiningQueue.TryDequeue(out var client))
+        {
+            _gameInstance.Clients.Add(new Client
             {
-                await Task.Delay(waitTime, cancellationToken).ConfigureAwait(false);
-            }
+                Id = client.Id,
+                Name = client.Name,
+                IsJoined = false
+            });
+        }
+        else if (_joinedQueue.TryDequeue(out var joinedClient))
+        {
+            _gameInstance.Clients.Single(c => c.Id == joinedClient.Id).IsJoined = true;
+            _networkClients.Add(joinedClient.Id, new NetworkClient(joinedClient.Id, joinedClient.NetworkClient,
+                (networkClient, state) => { }, _logger, CancellationToken.None));
+        }
+    }
+
+    private async Task SleepForNextTickAsync(Stopwatch stopwatch, CancellationToken cancellationToken)
+    {
+        var elapsedTime = stopwatch.Elapsed;
+        stopwatch.Reset();
+        var waitTime = _tickTime - elapsedTime;
+        if (waitTime > TimeSpan.Zero)
+        {
+            await Task.Delay(waitTime, cancellationToken).ConfigureAwait(false);
         }
     }
 
     private record JoiningClient(int Id, string Name);
     
-    private record JoinedClient(int Id, IncomingClient Client);
+    private record JoinedClient(int Id, IncomingNetworkClient NetworkClient);
 }

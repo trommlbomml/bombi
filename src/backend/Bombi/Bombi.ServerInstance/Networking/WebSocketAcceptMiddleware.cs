@@ -29,7 +29,7 @@ internal sealed class WebSocketAcceptMiddleware(
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
                     var taskCompletionSource = new TaskCompletionSource();
-                    gameInstanceService.AcceptIncomingWebSocket(new IncomingClient(token, webSocket, taskCompletionSource));
+                    gameInstanceService.AcceptIncomingWebSocket(new IncomingNetworkClient(token, webSocket, taskCompletionSource));
                 
                     var shutdownCts = new CancellationTokenSource();
                     var registration = appLifetime.ApplicationStopping.Register(() =>

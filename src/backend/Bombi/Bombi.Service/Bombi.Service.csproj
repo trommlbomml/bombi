@@ -17,8 +17,4 @@
       </Content>
     </ItemGroup>
 
-    <ItemGroup>
-      <ProjectReference Include="..\FlunkyBall\FlunkyBall.csproj" />
-    </ItemGroup>
-
 </Project>

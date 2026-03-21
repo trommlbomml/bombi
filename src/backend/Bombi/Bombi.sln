@@ -1,9 +1,5 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bombi.Service", "Bombi.Service\Bombi.Service.csproj", "{D4107020-4B01-4783-B83C-29B0C8E917A8}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "FlunkyBall", "FlunkyBall\FlunkyBall.csproj", "{BDF4990D-07C9-4FEA-9CB5-CD50A59296EA}"
-EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Bombi.ServerInstance", "Bombi.ServerInstance\Bombi.ServerInstance.csproj", "{D8BFDE36-EDE8-41EA-BAD4-14BB023F513D}"
 EndProject
 Global
@@ -12,14 +8,6 @@ Global
 		Release|Any CPU = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{D4107020-4B01-4783-B83C-29B0C8E917A8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{D4107020-4B01-4783-B83C-29B0C8E917A8}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{D4107020-4B01-4783-B83C-29B0C8E917A8}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{D4107020-4B01-4783-B83C-29B0C8E917A8}.Release|Any CPU.Build.0 = Release|Any CPU
-		{BDF4990D-07C9-4FEA-9CB5-CD50A59296EA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{BDF4990D-07C9-4FEA-9CB5-CD50A59296EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BDF4990D-07C9-4FEA-9CB5-CD50A59296EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{BDF4990D-07C9-4FEA-9CB5-CD50A59296EA}.Release|Any CPU.Build.0 = Release|Any CPU
 		{D8BFDE36-EDE8-41EA-BAD4-14BB023F513D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{D8BFDE36-EDE8-41EA-BAD4-14BB023F513D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D8BFDE36-EDE8-41EA-BAD4-14BB023F513D}.Release|Any CPU.ActiveCfg = Release|Any CPU

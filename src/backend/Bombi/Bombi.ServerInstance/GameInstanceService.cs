@@ -12,7 +12,7 @@ public interface IGameInstanceService
 
     string StartJoinInstance(Guid instanceId, string userName);
 
-    void AcceptIncomingWebSocket(IncomingClient client);
+    void AcceptIncomingWebSocket(IncomingNetworkClient networkClient);
 
     Task ShutdownAllInstancesAsync();
 }
@@ -57,15 +57,15 @@ public sealed class GameInstanceService : IGameInstanceService
         return GenerateUniqueToken(existingGameInstance, clientId);
     }
 
-    public void AcceptIncomingWebSocket(IncomingClient client)
+    public void AcceptIncomingWebSocket(IncomingNetworkClient networkClient)
     {
-        var byteArray = WebEncoders.Base64UrlDecode(client.Token);
+        var byteArray = WebEncoders.Base64UrlDecode(networkClient.Token);
         
         var instanceId = new Guid(new ReadOnlySpan<byte>(byteArray, 0, 16));
         var clientId = BitConverter.ToInt32(new ReadOnlySpan<byte>(byteArray, 16, 4));
         
         var existingGameInstance = _instanceTasks.Single(x => x.Id == instanceId);
-        existingGameInstance.ClientJoined(clientId, client);
+        existingGameInstance.ClientJoined(clientId, networkClient);
     }
 
     public async Task ShutdownAllInstancesAsync()

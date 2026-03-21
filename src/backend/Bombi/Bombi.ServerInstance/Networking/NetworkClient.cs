@@ -43,7 +43,7 @@ internal sealed class NetworkClient : INetworkClient
 
     public NetworkClient(
         int id,
-        IncomingClient client, 
+        IncomingNetworkClient networkClient, 
         Action<NetworkClient, ClientState> stateChanged,
         ILogger<IGameInstanceService> logger,
         CancellationToken stoppingToken)
@@ -51,8 +51,8 @@ internal sealed class NetworkClient : INetworkClient
         _stateChanged = stateChanged;
         
         _clientId = id;
-        _socket = client.Socket;
-        _taskCompletionSource = client.TaskCompletionSource;
+        _socket = networkClient.Socket;
+        _taskCompletionSource = networkClient.TaskCompletionSource;
         _logger = logger;
         _heartBeatTimeout = TimeSpan.FromSeconds(10);
         _communicationTask = StartCommunicationAsync(stoppingToken);
