@@ -22,11 +22,11 @@ public sealed class GameInstanceService : IGameInstanceService
     private readonly List<GameInstanceTask> _instanceTasks;
     private readonly CancellationTokenSource _cancellationTokenSource = new();
 
-    public GameInstanceService(IOptions<InstanceSettings> options)
+    public GameInstanceService(IOptions<InstanceSettings> options, ILogger<IGameInstanceService> logger)
     {
         _instanceTasks = Enumerable
             .Range(1, options.Value.MaxInstances)
-            .Select(_ => new GameInstanceTask(options.Value, _cancellationTokenSource.Token))
+            .Select(_ => new GameInstanceTask(options.Value, _cancellationTokenSource.Token, logger))
             .ToList();
     }
 
@@ -65,7 +65,7 @@ public sealed class GameInstanceService : IGameInstanceService
         var clientId = BitConverter.ToInt32(new ReadOnlySpan<byte>(byteArray, 16, 4));
         
         var existingGameInstance = _instanceTasks.Single(x => x.Id == instanceId);
-        existingGameInstance.ClientJoined(clientId);
+        existingGameInstance.ClientJoined(clientId, client);
     }
 
     public async Task ShutdownAllInstancesAsync()
