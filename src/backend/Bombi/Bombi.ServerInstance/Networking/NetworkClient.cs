@@ -2,78 +2,122 @@ using System.Collections.Concurrent;
 using System.IO.Compression;
 using System.Net.WebSockets;
 using System.Text;
-using Microsoft.Extensions.Logging;
 
-namespace FlunkyBall;
+namespace Bombi.ServerInstance.Networking;
 
-internal sealed class ClientSocketChannel
+public enum ClientState
 {
+    Connected,
+    Disconnected,
+}
+
+public interface INetworkClient
+{
+    int Id { get; }
+    string Name { get; }
+
+    void EnqueueMessage(SocketMessage socketMessage);
+
+    SocketMessage? GetNextMessage();
+}
+
+internal sealed class NetworkClient : INetworkClient
+{
+    private const int ClientHeartbeatTimeoutSeconds = 10;
+    
     private const string KeepAliveMessagePayload = "ping";
 
     private readonly int _clientId;
     private readonly WebSocket _socket;
     private readonly TaskCompletionSource _taskCompletionSource;
-    private readonly ILogger<ConnectorBackgroundService> _logger;
-    private readonly TimeSpan? _heartBeatTimeout;
+    private readonly ILogger<IGameInstanceService> _logger;
+    private readonly TimeSpan _heartBeatTimeout;
     private readonly byte[] _receiveBuffer = new byte[1024];
     private readonly byte[] _messageBuffer = new byte[1024];
     private readonly ConcurrentQueue<SocketMessage> _incomingMessages = new();
     private readonly ConcurrentQueue<SocketMessage> _outgoing = new();
+    
+    private readonly Action<NetworkClient, ClientState> _stateChanged;
+    private readonly Task _communicationTask;
+    private ClientState _state;
 
-    public ClientSocketChannel(
-        int clientId,
-        IncomingSocket incomingSocket,
-        ILogger<ConnectorBackgroundService> logger,
-        string name,
-        TimeSpan? heartBeatTimeout)
+    public NetworkClient(
+        int id,
+        IncomingClient client, 
+        Action<NetworkClient, ClientState> stateChanged,
+        ILogger<IGameInstanceService> logger,
+        CancellationToken stoppingToken)
     {
-        _clientId = clientId;
-        _socket = incomingSocket.Socket;
-        _taskCompletionSource = incomingSocket.TaskCompletionSource;
+        _stateChanged = stateChanged;
+        
+        _clientId = id;
+        _socket = client.Socket;
+        _taskCompletionSource = client.TaskCompletionSource;
         _logger = logger;
-        _heartBeatTimeout = heartBeatTimeout;
-        Name = name;
+        _heartBeatTimeout = TimeSpan.FromSeconds(10);
+        _communicationTask = StartCommunicationAsync(stoppingToken);
+
+        State = ClientState.Connected;
     }
     
-    public string Name { get; }
+    public int MessageCount => _incomingMessages.Count;
+
+    public int Id { get; }
+
+    public ClientState State
+    {
+        get => _state;
+        set
+        {
+            if (_state != value)
+            {
+                _state = value;
+                _stateChanged(this, _state);
+            }
+        }
+    }
+
+    public string Name { get; private set; }
+    
+
+    public void EnqueueMessage(SocketMessage socketMessage) 
+        => _outgoing.Enqueue(socketMessage);
 
     public SocketMessage? GetNextMessage()
         => _incomingMessages.TryDequeue(out var msg) ? msg : null;
 
-    public int MessageCount => _incomingMessages.Count;
-
-    public void StartComplete()
+    public async Task CloseAsync()
     {
         _taskCompletionSource.SetResult();
+        await _communicationTask;
     }
-
+    
     public Task CloseAsync(WebSocketCloseStatus status, string reason, CancellationToken stoppingToken) 
         => _socket.CloseAsync(status, reason, stoppingToken);
 
-    public async Task StartReadMessagesAsync(CancellationToken stoppingToken)
+    private async Task StartCommunicationAsync(CancellationToken stoppingToken)
+    {
+        await Task.WhenAll(
+            StartReadMessagesAsync(stoppingToken),
+            StartWriteMessagesAsync(stoppingToken)).ConfigureAwait(false);
+            
+        State = ClientState.Disconnected;
+    }
+
+
+    private async Task StartReadMessagesAsync(CancellationToken stoppingToken)
     {
         try
         {
             while (!stoppingToken.IsCancellationRequested && _socket.State == WebSocketState.Open)
             {
-                if (_heartBeatTimeout.HasValue)
-                {
-                    var cancellationTokenSource = new CancellationTokenSource(_heartBeatTimeout.Value);
-                    var newStoppingToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, stoppingToken);
+                var cancellationTokenSource = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+                var newStoppingToken = CancellationTokenSource.CreateLinkedTokenSource(cancellationTokenSource.Token, stoppingToken);
                     
-                    var message = await ReadMessageFromSocketAsync(newStoppingToken.Token).ConfigureAwait(false);
-                    if (!newStoppingToken.Token.IsCancellationRequested && !message.IsEmpty)
-                    {
-                        _incomingMessages.Enqueue(message);
-                    }
-                }
-                else
+                var message = await ReadMessageFromSocketAsync(newStoppingToken.Token).ConfigureAwait(false);
+                if (!newStoppingToken.Token.IsCancellationRequested && !message.IsEmpty)
                 {
-                    var message = await ReadMessageFromSocketAsync(stoppingToken).ConfigureAwait(false);
-                    if (!stoppingToken.IsCancellationRequested && !message.IsEmpty)
-                    {
-                        _incomingMessages.Enqueue(message);
-                    }
+                    _incomingMessages.Enqueue(message);
                 }
             }
         }
@@ -90,10 +134,7 @@ internal sealed class ClientSocketChannel
         }
     }
 
-    public void EnqueueMessage(SocketMessage message) 
-        => _outgoing.Enqueue(message);
-
-    public async Task StartWriteMessagesAsync(CancellationToken stoppingToken)
+    private async Task StartWriteMessagesAsync(CancellationToken stoppingToken)
     {
         while (!stoppingToken.IsCancellationRequested && _socket.State == WebSocketState.Open)
         {
@@ -107,8 +148,8 @@ internal sealed class ClientSocketChannel
             }
         }
     }
-    
-    public async Task SendMessageAsync(SocketMessage message, CancellationToken stoppingToken)
+
+    private async Task SendMessageAsync(SocketMessage message, CancellationToken stoppingToken)
     {
         if (message.MessageType == WebSocketMessageType.Text)
         {
@@ -133,8 +174,8 @@ internal sealed class ClientSocketChannel
             await _socket.SendAsync(new ArraySegment<byte>(memoryStream.GetBuffer(), 0, (int)memoryStream.Length), message.MessageType, true, stoppingToken).ConfigureAwait(false);   
         }
     }
-    
-    public async Task<SocketMessage> ReadMessageFromSocketAsync(CancellationToken stoppingToken)
+
+    private async Task<SocketMessage> ReadMessageFromSocketAsync(CancellationToken stoppingToken)
     {
         try
         {

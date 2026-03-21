@@ -1,3 +1,5 @@
+using Bombi.ServerInstance.Networking;
+
 namespace Bombi.ServerInstance;
 
 public static class Program

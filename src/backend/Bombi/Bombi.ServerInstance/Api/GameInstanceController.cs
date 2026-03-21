@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Bombi.ServerInstance;
+namespace Bombi.ServerInstance.Api;
 
 [ApiController]
 [Route("game-instance")]

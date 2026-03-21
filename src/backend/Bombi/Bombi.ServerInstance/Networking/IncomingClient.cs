@@ -1,6 +1,6 @@
 using System.Net.WebSockets;
 
-namespace Bombi.ServerInstance;
+namespace Bombi.ServerInstance.Networking;
 
 public sealed record IncomingClient(
     string Token, 

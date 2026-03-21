@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Connections.Features;
 
-namespace Bombi.ServerInstance;
+namespace Bombi.ServerInstance.Networking;
 
 internal sealed class WebSocketAcceptMiddleware(
     IGameInstanceService gameInstanceService, 

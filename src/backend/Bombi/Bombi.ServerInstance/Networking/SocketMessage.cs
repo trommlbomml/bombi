@@ -1,7 +1,7 @@
 using System.Net.WebSockets;
 using System.Text;
 
-namespace FlunkyBall;
+namespace Bombi.ServerInstance.Networking;
 
 
 public sealed class SocketMessage
