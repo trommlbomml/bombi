@@ -25,7 +25,7 @@ internal sealed class WebSocketAcceptMiddleware(
 
                 var token = context.Request.Query["token"].FirstOrDefault() ?? string.Empty;
             
-                if (true)
+                if (!string.IsNullOrEmpty(token))
                 {
                     using var webSocket = await context.WebSockets.AcceptWebSocketAsync().ConfigureAwait(false);
                     var taskCompletionSource = new TaskCompletionSource();
