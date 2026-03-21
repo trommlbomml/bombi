@@ -85,4 +85,8 @@ export class Level {
     placeBomb(figure: Figure): void {
         this.bombs.push(new Bomb(this.scene, this, figure.tilePositionX, figure.tilePositionY));
     }
+
+    collidesWith(figure: Figure): void {
+
+    }
 }

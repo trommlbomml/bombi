@@ -51,6 +51,7 @@ export class Figure {
     private readonly cursor: Phaser.Types.Input.Keyboard.CursorKeys;
     private readonly level: Level;
     private readonly placeBombKey: Phaser.Input.Keyboard.Key;
+    private readonly figureBounds: Phaser.Geom.Rectangle;
 
     private frameIndex = 0;
     private faceDirection: FaceDirection;
@@ -71,6 +72,10 @@ export class Figure {
         this.placeBombKey = scene.input.keyboard!.addKey(Phaser.Input.Keyboard.KeyCodes.SPACE);
 
         this.cursor = scene.input.keyboard!.createCursorKeys();
+
+        this.figureBounds = new Phaser.Geom.Rectangle(
+            0, 0, 0,0
+        );
     }
 
     setTilePosition(x: number, y: number) {
@@ -83,6 +88,10 @@ export class Figure {
 
     get tilePositionY(): number {
         return worldYToTileY(this.sprite.y);
+    }
+
+    get bounds(): Phaser.Geom.Rectangle {
+        return this.figureBounds;
     }
 
     update(elapsedSeconds: number) {
@@ -106,6 +115,9 @@ export class Figure {
             this.sprite.y += moveY * FIGURE_MOVEMENT_SPEED * elapsedSeconds;
 
             this.sprite.anims.play(`${this.color}_${this.faceDirection}`, true);
+            const size = this.sprite.width * 0.8;
+            this.figureBounds.setPosition(this.sprite.x - size / 2, this.sprite.y - size / 2);
+            this.figureBounds.setSize(size, size);
         } else {
             this.updateCurrentFrame();
         }
