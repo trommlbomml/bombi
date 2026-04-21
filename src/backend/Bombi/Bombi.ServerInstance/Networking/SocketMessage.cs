@@ -6,6 +6,10 @@ namespace Bombi.ServerInstance.Networking;
 public interface ISerializerTarget
 {
     void Write(int value);
+    
+    void Write(ArraySegment<byte> value);
+
+    void Write(byte value);
 }
 
 public sealed class SocketMessage : ISerializerTarget
@@ -47,4 +51,6 @@ public sealed class SocketMessage : ISerializerTarget
         value.CopyTo(_data, _length);
         _length += value.Count;
     }
+
+    public void Write(byte value) => _data[_length++] = value;
 }
