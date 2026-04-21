@@ -1,6 +1,5 @@
 ﻿using System.Collections.Concurrent;
 using System.Diagnostics;
-using System.Net.NetworkInformation;
 using Bombi.ServerInstance.Game;
 using Bombi.ServerInstance.Networking;
 
@@ -15,6 +14,7 @@ public sealed class GameInstanceTask
     private readonly ConcurrentQueue<JoiningClient> _joiningQueue = new();
     private readonly ConcurrentQueue<JoinedClient> _joinedQueue = new();
     private readonly Dictionary<int, NetworkClient> _networkClients = new();
+    private readonly SocketMessageFactory _factory;
     
     public Guid Id { get; } = Guid.NewGuid();
     
@@ -23,6 +23,7 @@ public sealed class GameInstanceTask
     public GameInstanceTask(InstanceSettings settings, CancellationToken cancellationToken, ILogger<IGameInstanceService> logger)
     {
         _logger = logger;
+        _factory = new SocketMessageFactory();
         _tickTime = TimeSpan.FromSeconds(1.0 / settings.TickRate);
         _gameInstance = new GameInstance();
         Task = RunGameInstanceAsync(cancellationToken);
@@ -54,6 +55,13 @@ public sealed class GameInstanceTask
             
             _gameInstance.RunFrame(tick, _tickTime.TotalSeconds);
 
+            foreach (var client in _networkClients)
+            {
+                var message = _factory.Rent();
+                _gameInstance.SerializeGameState(tick, message);
+                client.Value.EnqueueMessage(message);
+            }
+            
             await SleepForNextTickAsync(sw,  cancellationToken).ConfigureAwait(false);
             tick++;
         }
@@ -74,7 +82,7 @@ public sealed class GameInstanceTask
         {
             _gameInstance.Clients.Single(c => c.Id == joinedClient.Id).IsJoined = true;
             _networkClients.Add(joinedClient.Id, new NetworkClient(joinedClient.Id, joinedClient.NetworkClient,
-                (networkClient, state) => { }, _logger, CancellationToken.None));
+                (_, _) => { }, _factory, _logger, CancellationToken.None));
         }
     }
 

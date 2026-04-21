@@ -1,40 +1,50 @@
-using System.Net.WebSockets;
-using System.Text;
+using System.Buffers.Binary;
+using System.Net.Sockets;
 
 namespace Bombi.ServerInstance.Networking;
 
-
-public sealed class SocketMessage
+public interface ISerializerTarget
 {
-    public static SocketMessage Empty { get; } = new();
+    void Write(int value);
+}
+
+public sealed class SocketMessage : ISerializerTarget
+{
+    public static readonly SocketMessage Empty = new (SocketMessageFactory.Empty, 0);
     
-    public bool Compress { get; private set; }
+    private readonly SocketMessageFactory _factory;
+    private readonly byte[] _data;
     
-    public SocketMessage(string content)
+    private int _length;
+
+    public SocketMessage(SocketMessageFactory factory) : this(factory, 128)
     {
-        Data = Encoding.UTF8.GetBytes(content);
-        MessageType = WebSocketMessageType.Text;
     }
 
-    private SocketMessage()
+    private SocketMessage(SocketMessageFactory factory, int messageCapacity)
     {
-        Data = [];
-        MessageType = WebSocketMessageType.Binary;
+        _factory = factory;
+        _data = new byte[messageCapacity];
+        Data = new ArraySegment<byte>(_data, 0, 0);
+    }
+    
+    public bool IsEmpty => Data.Count == 0;
+    
+    public ArraySegment<byte> Data { get; private set; }
+
+    public void Return()
+        => _factory.Return(this);
+
+    public void Write(int value)
+    {
+        BinaryPrimitives.WriteInt32LittleEndian(_data.AsSpan(Data.Count), value);
+        _length += sizeof(int);
+        Data = new ArraySegment<byte>(_data, 0, _length);
     }
 
-    public SocketMessage(ArraySegment<byte> data, bool compress = false)
+    public void Write(ArraySegment<byte> value)
     {
-        Data = data.ToArray();
-        Compress = compress;
-        MessageType = WebSocketMessageType.Binary;
+        value.CopyTo(_data, _length);
+        _length += value.Count;
     }
-
-    public bool IsEmpty => Data.Length == 0;
-    
-    public WebSocketMessageType MessageType { get; }
-    
-    public byte[] Data { get; }
-    
-    public string ReadAsString()
-        => Encoding.UTF8.GetString(Data); 
 }

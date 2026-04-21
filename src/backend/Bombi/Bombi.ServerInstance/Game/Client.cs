@@ -7,4 +7,6 @@ public sealed class Client
     public bool IsJoined { get; set; }
     
     public required string Name { get; set; }
+    
+    public Vector2 Position { get; set; }
 }

@@ -1,5 +1,4 @@
 using System.Collections.Concurrent;
-using System.IO.Compression;
 using System.Net.WebSockets;
 using System.Text;
 
@@ -38,6 +37,7 @@ internal sealed class NetworkClient : INetworkClient
     private readonly ConcurrentQueue<SocketMessage> _outgoing = new();
     
     private readonly Action<NetworkClient, ClientState> _stateChanged;
+    private readonly SocketMessageFactory _factory;
     private readonly Task _communicationTask;
     private ClientState _state;
 
@@ -45,11 +45,13 @@ internal sealed class NetworkClient : INetworkClient
         int id,
         IncomingNetworkClient networkClient, 
         Action<NetworkClient, ClientState> stateChanged,
+        SocketMessageFactory factory,
         ILogger<IGameInstanceService> logger,
         CancellationToken stoppingToken)
     {
         _stateChanged = stateChanged;
-        
+        _factory = factory;
+
         _clientId = id;
         _socket = networkClient.Socket;
         _taskCompletionSource = networkClient.TaskCompletionSource;
@@ -151,28 +153,7 @@ internal sealed class NetworkClient : INetworkClient
 
     private async Task SendMessageAsync(SocketMessage message, CancellationToken stoppingToken)
     {
-        if (message.MessageType == WebSocketMessageType.Text)
-        {
-            await _socket.SendAsync(message.Data, message.MessageType, true, stoppingToken).ConfigureAwait(false);
-        }
-        else
-        {
-            await using var memoryStream = new MemoryStream();
-            if (message.Compress)
-            {
-                memoryStream.WriteByte(1);
-                await using var deflate = new DeflateStream(memoryStream, CompressionLevel.Optimal, true);
-                await deflate.WriteAsync(message.Data, stoppingToken).ConfigureAwait(false);
-            }
-            else
-            {
-                memoryStream.WriteByte(0);
-                memoryStream.Write(message.Data);
-            }
-            memoryStream.Position = 0;
-        
-            await _socket.SendAsync(new ArraySegment<byte>(memoryStream.GetBuffer(), 0, (int)memoryStream.Length), message.MessageType, true, stoppingToken).ConfigureAwait(false);   
-        }
+        await _socket.SendAsync(message.Data, WebSocketMessageType.Binary, true, stoppingToken).ConfigureAwait(false);   
     }
 
     private async Task<SocketMessage> ReadMessageFromSocketAsync(CancellationToken stoppingToken)
@@ -197,11 +178,10 @@ internal sealed class NetworkClient : INetworkClient
 
             switch (result.MessageType)
             {
-                case WebSocketMessageType.Text:
-                    var content = Encoding.UTF8.GetString(_messageBuffer, 0, receivedBytes);
-                    return content == KeepAliveMessagePayload ? SocketMessage.Empty : new SocketMessage(content);
                 case WebSocketMessageType.Binary:
-                    return new SocketMessage(new ArraySegment<byte>(_receiveBuffer, 0, receivedBytes));
+                    var socketMessage = _factory.Rent();
+                    socketMessage.Write(new ArraySegment<byte>(_receiveBuffer, 0, receivedBytes));
+                    return socketMessage;
                 case WebSocketMessageType.Close:
                     return SocketMessage.Empty;
                 default:
