@@ -71,16 +71,11 @@ public sealed class GameInstanceTask
     {
         if (_joiningQueue.TryDequeue(out var client))
         {
-            _gameInstance.Clients.Add(new Client
-            {
-                Id = client.Id,
-                Name = client.Name,
-                IsJoined = false
-            });
+            _gameInstance.OnClientJoining(client.Id,  client.Name);
         }
         else if (_joinedQueue.TryDequeue(out var joinedClient))
         {
-            _gameInstance.Clients.Single(c => c.Id == joinedClient.Id).IsJoined = true;
+            _gameInstance.OnClientJoined(joinedClient.Id);
             _networkClients.Add(joinedClient.Id, new NetworkClient(joinedClient.Id, joinedClient.NetworkClient,
                 (_, _) => { }, _factory, _logger, CancellationToken.None));
         }

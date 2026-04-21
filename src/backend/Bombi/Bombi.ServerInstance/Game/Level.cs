@@ -22,6 +22,8 @@ public sealed class Level
         1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
     }.Select(i => (TileType)i).ToArray();
 
+    private readonly List<Bomb> _bombs = new();
+
     public Level()
     {
         for (var i = 0; i < _tileType.Length; i++)
@@ -48,6 +50,12 @@ public sealed class Level
         foreach (var tileType in _tileType)
         {
             target.Write((byte)tileType);
+        }
+        
+        target.Write(_bombs.Count);
+        foreach (var bomb in _bombs)
+        {
+            bomb.SerializeTo(target);
         }
     }
 }

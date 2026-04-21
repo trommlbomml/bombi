@@ -1,11 +1,15 @@
 using System.Buffers.Binary;
-using System.Net.Sockets;
+using System.Text;
 
 namespace Bombi.ServerInstance.Networking;
 
 public interface ISerializerTarget
 {
     void Write(int value);
+    
+    void Write(double value);
+
+    void Write(string value);
     
     void Write(ArraySegment<byte> value);
 
@@ -29,12 +33,11 @@ public sealed class SocketMessage : ISerializerTarget
     {
         _factory = factory;
         _data = new byte[messageCapacity];
-        Data = new ArraySegment<byte>(_data, 0, 0);
     }
     
     public bool IsEmpty => Data.Count == 0;
     
-    public ArraySegment<byte> Data { get; private set; }
+    public ArraySegment<byte> Data => new(_data, 0, _length);
 
     public void Return()
         => _factory.Return(this);
@@ -43,7 +46,19 @@ public sealed class SocketMessage : ISerializerTarget
     {
         BinaryPrimitives.WriteInt32LittleEndian(_data.AsSpan(Data.Count), value);
         _length += sizeof(int);
-        Data = new ArraySegment<byte>(_data, 0, _length);
+    }
+
+    public void Write(double value)
+    {
+        BinaryPrimitives.WriteDoubleLittleEndian(_data.AsSpan(Data.Count), value);
+        _length += sizeof(double);
+    }
+
+    public void Write(string value)
+    {
+        Write(value.Length);
+        Write(Encoding.UTF8.GetBytes(value));
+        _length += value.Length + sizeof(int);
     }
 
     public void Write(ArraySegment<byte> value)
@@ -52,5 +67,8 @@ public sealed class SocketMessage : ISerializerTarget
         _length += value.Count;
     }
 
-    public void Write(byte value) => _data[_length++] = value;
+    public void Write(byte value)
+    {
+        _data[_length++] = value;
+    }
 }
