@@ -40,6 +40,7 @@ export class SessionPage extends LitElement {
 
     private onCreateSession() {
         gameClient.createLobby()
+            .then(() => gameClient.startGame())
             .catch(err => {
                 console.log(err);
             });

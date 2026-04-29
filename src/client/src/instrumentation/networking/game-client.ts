@@ -21,6 +21,10 @@ export class GameClient {
     async createLobby(): Promise<void> {
         const response = await fetch(`${this.baseUrl}/game-instance`, {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
             body: JSON.stringify({
                 name: "peter"
             })
@@ -36,6 +40,11 @@ export class GameClient {
             throw new Error("Could not login");
         }
     }
+
+    async startGame(): Promise<void> {
+        appStore.getState().startGame();
+        return Promise.resolve();
+    }
 }
 
-export const gameClient = new GameClient('http://localhost:3000');
+export const gameClient = new GameClient('http://localhost:5237');
