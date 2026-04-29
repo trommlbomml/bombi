@@ -3,6 +3,7 @@ import {customElement, property, state} from "lit/decorators.js";
 import {appStore} from "../instrumentation/app-state.ts";
 import type {Session} from "./models/session.ts";
 import {querySessions} from "./services/query-sessions.ts";
+import {gameClient} from "../instrumentation/networking/game-client.ts";
 
 @customElement('session-page')
 export class SessionPage extends LitElement {
@@ -36,6 +37,14 @@ export class SessionPage extends LitElement {
         this.unsubscribe?.();
         super.disconnectedCallback();
     }
+
+    private onCreateSession() {
+        gameClient.createLobby()
+            .catch(err => {
+                console.log(err);
+            });
+    }
+
     render() {
         if (this.isVisible) {
             return html`
@@ -45,7 +54,7 @@ export class SessionPage extends LitElement {
                             <h2>
                                 Sessions
                             </h2>
-                            <button class="button is-primary">
+                            <button class="button is-primary" @click=${this.onCreateSession}>
                                 Create Own Session
                             </button>
                             ${this.renderSessions()}

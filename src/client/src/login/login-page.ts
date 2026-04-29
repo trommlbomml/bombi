@@ -1,6 +1,7 @@
 import { LitElement, html } from "lit";
 import { customElement, property } from "lit/decorators.js";
 import {appStore} from "../instrumentation/app-state.ts";
+import {gameClient} from "../instrumentation/networking/game-client.ts";
 
 @customElement('login-page')
 export class LoginPage extends LitElement {
@@ -27,7 +28,9 @@ export class LoginPage extends LitElement {
     }
 
     onLogin() {
-        appStore.getState().login();
+        gameClient.login('peter').catch(error => {
+            console.log(error);
+        });
     }
 
 render() {
