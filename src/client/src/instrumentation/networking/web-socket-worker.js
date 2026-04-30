@@ -32,9 +32,6 @@ addEventListener('message', (e) => {
             postMessage({
                 type: 'socket-open',
             });
-            sendInterval = setInterval(() => {
-                webSocket.send("ping");
-            }, 3000);
         };
         webSocket.onclose = () => {
             postMessage({

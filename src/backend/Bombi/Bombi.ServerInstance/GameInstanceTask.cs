@@ -13,6 +13,7 @@ public sealed class GameInstanceTask
     private readonly TimeSpan _tickTime;
     private readonly ConcurrentQueue<JoiningClient> _joiningQueue = new();
     private readonly ConcurrentQueue<JoinedClient> _joinedQueue = new();
+    private readonly ConcurrentQueue<int> _leavingQueue = new();
     private readonly Dictionary<int, NetworkClient> _networkClients = new();
     private readonly SocketMessageFactory _factory;
     
@@ -42,6 +43,14 @@ public sealed class GameInstanceTask
     {
         _joinedQueue.Enqueue(new JoinedClient(id, networkClient));
     }
+
+    private void OnClientStateChanged(NetworkClient client, ClientState state)
+    {
+        if (state == ClientState.Disconnected)
+        {
+            _leavingQueue.Enqueue(client.Id);
+        }
+    }
     
     private async Task RunGameInstanceAsync(CancellationToken cancellationToken)
     {
@@ -51,7 +60,7 @@ public sealed class GameInstanceTask
 
         while (!cancellationToken.IsCancellationRequested)
         {
-            HandleClientJoining();
+            HandleClientJoiningAndLeaving();
             
             _gameInstance.RunFrame(tick, _tickTime.TotalSeconds);
 
@@ -67,17 +76,25 @@ public sealed class GameInstanceTask
         }
     }
 
-    private void HandleClientJoining()
+    private void HandleClientJoiningAndLeaving()
     {
         if (_joiningQueue.TryDequeue(out var client))
         {
             _gameInstance.OnClientJoining(client.Id,  client.Name);
+            _logger.LogInformation("Client [{Id}] is joining the sever", client.Id);
         }
         else if (_joinedQueue.TryDequeue(out var joinedClient))
         {
             _gameInstance.OnClientJoined(joinedClient.Id);
             _networkClients.Add(joinedClient.Id, new NetworkClient(joinedClient.Id, joinedClient.NetworkClient,
-                (_, _) => { }, _factory, _logger, CancellationToken.None));
+                OnClientStateChanged, _factory, _logger, CancellationToken.None));
+            _logger.LogInformation("Client [{Id}] has joined the sever", joinedClient.Id);
+        }
+
+        if (_leavingQueue.TryDequeue(out var leavingClient))
+        {
+            _gameInstance.OnClientLeft(leavingClient);
+            _logger.LogInformation("Client [{Id}] has left the sever", leavingClient);
         }
     }
 

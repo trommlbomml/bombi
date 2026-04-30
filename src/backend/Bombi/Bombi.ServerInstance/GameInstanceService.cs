@@ -83,7 +83,7 @@ public sealed class GameInstanceService : IGameInstanceService
             var idAsBytes = gameInstanceTask.Id.ToByteArray();
             idAsBytes.CopyTo(tokenData, 0);
             
-            var numberAsBytes = BitConverter.GetBytes(idAsBytes.Length);
+            var numberAsBytes = BitConverter.GetBytes(clientId);
             numberAsBytes.CopyTo(tokenData, idAsBytes.Length);
             
             rng.GetBytes(

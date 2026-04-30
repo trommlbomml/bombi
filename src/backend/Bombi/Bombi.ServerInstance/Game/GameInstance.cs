@@ -28,6 +28,9 @@ public sealed class GameInstance
         client.IsJoined = true;
     }
 
+    public void OnClientLeft(int id) 
+        => _clients.RemoveAll(c => c.Id == id);
+
     public void RunFrame(int serverTick, double elapsedSeconds)
     {
         
