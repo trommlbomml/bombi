@@ -25,6 +25,7 @@ public static class Program
         
         var app = builder.Build();
 
+        app.UseWebSockets();
         app.UseMiddleware<WebSocketAcceptMiddleware>();
         if (cors.Any()) app.UseCors();
         app.MapControllers();
