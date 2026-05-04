@@ -1,4 +1,5 @@
-﻿using Bombi.ServerInstance.Networking;
+﻿using System.Numerics;
+using Bombi.ServerInstance.Networking;
 
 namespace Bombi.ServerInstance.Game;
 
@@ -6,7 +7,7 @@ public class Bomb
 {
     public Vector2 Position { get; set; }
     
-    public double RemainingTickTime { get; set; }
+    public float RemainingTickTime { get; set; }
 
     public void SerializeTo(ISerializerTarget target)
     {

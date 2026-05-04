@@ -1,4 +1,5 @@
-﻿using Bombi.ServerInstance.Networking;
+﻿using System.Numerics;
+using Bombi.ServerInstance.Networking;
 
 namespace Bombi.ServerInstance.Game;
 
@@ -13,6 +14,8 @@ public sealed class Client
     public required string Name { get; set; }
     
     public Vector2 Position { get; set; }
+
+    public List<InputSnapshot> InputSnapshots { get; } = new();
 
     public void SerializeTo(ISerializerTarget target)
     {

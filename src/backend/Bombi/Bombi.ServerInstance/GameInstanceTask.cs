@@ -2,6 +2,7 @@
 using System.Diagnostics;
 using Bombi.ServerInstance.Game;
 using Bombi.ServerInstance.Networking;
+using Bombi.ServerInstance.Networking.IncomingMessageTypes;
 
 namespace Bombi.ServerInstance;
 
@@ -61,18 +62,47 @@ public sealed class GameInstanceTask
         while (!cancellationToken.IsCancellationRequested)
         {
             HandleClientJoiningAndLeaving();
-            
+            ReadClientMessages();
             _gameInstance.RunFrame(tick, _tickTime.TotalSeconds);
-
-            foreach (var client in _networkClients)
-            {
-                var message = _factory.Rent();
-                _gameInstance.SerializeGameState(tick, message);
-                client.Value.EnqueueMessage(message);
-            }
+            SendStateToClients(tick);
             
             await SleepForNextTickAsync(sw,  cancellationToken).ConfigureAwait(false);
             tick++;
+        }
+    }
+
+    private void SendStateToClients(int tick)
+    {
+        foreach (var client in _networkClients)
+        {
+            var message = _factory.Rent();
+            _gameInstance.SerializeGameState(tick, message);
+            client.Value.EnqueueMessage(message);
+        }
+    }
+
+    private void ReadClientMessages()
+    {
+        foreach (var networkClient in _networkClients)
+        {
+            var message = networkClient.Value.GetNextMessage();
+            while (message != null)
+            {
+                switch (message.GetMessageType())
+                {
+                    case MessageType.StartMatchCommand:
+                        _gameInstance.StartGame();
+                        break;
+                    case MessageType.InputsCommand:
+                        _gameInstance.AddInput(networkClient.Key, message.GetInputSnapshot());
+                        break;
+                    default:
+                        throw new ArgumentOutOfRangeException();
+                }
+                    
+                message = networkClient.Value.GetNextMessage();
+            }
+                
         }
     }
 

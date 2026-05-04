@@ -7,7 +7,7 @@ public interface ISerializerTarget
 {
     void Write(int value);
     
-    void Write(double value);
+    void Write(float value);
 
     void Write(string value);
     
@@ -16,7 +16,14 @@ public interface ISerializerTarget
     void Write(byte value);
 }
 
-public sealed class SocketMessage : ISerializerTarget
+public interface IDeserializerTarget
+{
+    byte ReadByte();
+
+    int ReadInt32();
+}
+
+public sealed class SocketMessage : ISerializerTarget, IDeserializerTarget
 {
     private const int MaxMessageLength = 1014;
     
@@ -26,6 +33,7 @@ public sealed class SocketMessage : ISerializerTarget
     private readonly byte[] _data;
     
     private int _length;
+    private int _readIndex;
 
     public SocketMessage(SocketMessageFactory factory) : this(factory, MaxMessageLength)
     {
@@ -50,10 +58,10 @@ public sealed class SocketMessage : ISerializerTarget
         _length += sizeof(int);
     }
 
-    public void Write(double value)
+    public void Write(float value)
     {
-        BinaryPrimitives.WriteDoubleLittleEndian(_data.AsSpan(Data.Count), value);
-        _length += sizeof(double);
+        BinaryPrimitives.WriteSingleLittleEndian(_data.AsSpan(Data.Count), value);
+        _length += sizeof(float);
     }
 
     public void Write(string value)
@@ -72,5 +80,17 @@ public sealed class SocketMessage : ISerializerTarget
     public void Write(byte value)
     {
         _data[_length++] = value;
+    }
+
+    public byte ReadByte()
+    {
+        return _data[_readIndex++];
+    }
+
+    public int ReadInt32()
+    {
+        var intValue = BinaryPrimitives.ReadInt32LittleEndian(Data.AsSpan(_readIndex, 4));
+        _readIndex += 4;
+        return intValue;
     }
 }

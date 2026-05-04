@@ -12,7 +12,6 @@ public enum ClientState
 public interface INetworkClient
 {
     int Id { get; }
-    string Name { get; }
 
     void EnqueueMessage(SocketMessage socketMessage);
 
@@ -71,8 +70,6 @@ internal sealed class NetworkClient : INetworkClient
             }
         }
     }
-
-    public string Name { get; }
     
 
     public void EnqueueMessage(SocketMessage socketMessage) 
