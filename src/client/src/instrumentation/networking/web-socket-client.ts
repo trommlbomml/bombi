@@ -2,7 +2,7 @@
 
 export class WebSocketClient {
     private readonly _socketWorker: Worker;
-    private readonly _messages: Array<string | ArrayBuffer | any> = [];
+    private readonly _messages: Array<ArrayBuffer> = [];
 
     private _connectionResolver?: (value: boolean | PromiseLike<boolean>) => void;
     private _state: SocketState = 'Disconnected';
@@ -35,22 +35,15 @@ export class WebSocketClient {
         return this._state;
     }
 
-    popQueuedMessageData(): string|ArrayBuffer | any {
+    popQueuedMessageData(): ArrayBuffer | undefined {
         return this._messages.shift();
     }
 
-    sendSocketMessage(data: any) {
-        if (data instanceof ArrayBuffer) {
-            this._socketWorker.postMessage({
-                type: 'send',
-                data,
-            }, [data]);
-        } else {
-            this._socketWorker.postMessage({
-                type: 'send',
-                data,
-            });
-        }
+    sendSocketMessage(data: ArrayBuffer) {
+        this._socketWorker.postMessage({
+            type: 'send',
+            data,
+        }, [data]);
     }
 
     private onWorkerError(e: ErrorEvent) {
@@ -58,17 +51,19 @@ export class WebSocketClient {
     }
 
     private onWorkerMessage(e: MessageEvent){
-        if (e.data.type === 'socket-open') {
+        if (e.data === 'socket-open') {
             this._state = 'Connected';
             return this._connectionResolver?.(true);
-        } else if (e.data.type === 'socket-open-failed') {
+        } else if (e.data === 'socket-open-failed') {
             this._state = 'Disconnected';
             return this._connectionResolver?.(false);
-        } else if (e.data.type === 'socket-closed') {
+        } else if (e.data === 'socket-closed') {
             this._state = 'Disconnected';
             return this._connectionResolver?.(false);
-        } else if (e.data.type === 'socket-message') {
-            this._messages.push(e.data.data);
+        } else if (e.data instanceof ArrayBuffer) {
+            this._messages.push(e.data as ArrayBuffer);
+        } else {
+            throw new Error(`Invalid data: ${e}`);
         }
     }
 }

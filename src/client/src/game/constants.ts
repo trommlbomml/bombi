@@ -5,6 +5,10 @@ export const SCREEN_HEIGHT = 448;
 export const LEVEL_WIDTH = 15;
 export const LEVEL_HEIGHT = 13;
 
+export const TILE_GRASS = 0;
+export const TILE_WALL = 1;
+export const TILE_BOX = 1;
+
 export const TILE_WIDTH = 32;
 
 export const TILE_HEIGHT = 32;
@@ -23,8 +27,6 @@ export const LAYER_BASE = 1
 export const LAYER_FRINGE = 2
 export const LAYER_FIGURE = 3
 export const LAYER_EXPLOSION = 4
-
-export const BOX_SPAWN_PROBABILITY = 0.85;
 
 export const BOMB_BURNTIME = 3;
 export const BOMB_ANIMATION_SPEED = 16;

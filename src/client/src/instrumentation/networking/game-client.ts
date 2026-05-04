@@ -45,6 +45,10 @@ export class GameClient {
         appStore.getState().startGame();
         return Promise.resolve();
     }
+
+    getNextMessage(): ArrayBuffer|undefined {
+        return this.webSocketClient.popQueuedMessageData();
+    }
 }
 
 export const gameClient = new GameClient('http://localhost:5237');

@@ -1,6 +1,5 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
 
 namespace Bombi.ServerInstance.Networking;
 
@@ -22,15 +21,10 @@ public interface INetworkClient
 
 internal sealed class NetworkClient : INetworkClient
 {
-    private const int ClientHeartbeatTimeoutSeconds = 10;
-    
-    private const string KeepAliveMessagePayload = "ping";
-
     private readonly int _clientId;
     private readonly WebSocket _socket;
     private readonly TaskCompletionSource _taskCompletionSource;
     private readonly ILogger<IGameInstanceService> _logger;
-    private readonly TimeSpan _heartBeatTimeout;
     private readonly byte[] _receiveBuffer = new byte[1024];
     private readonly byte[] _messageBuffer = new byte[1024];
     private readonly ConcurrentQueue<SocketMessage> _incomingMessages = new();
@@ -56,7 +50,6 @@ internal sealed class NetworkClient : INetworkClient
         _socket = networkClient.Socket;
         _taskCompletionSource = networkClient.TaskCompletionSource;
         _logger = logger;
-        _heartBeatTimeout = TimeSpan.FromSeconds(10);
         _communicationTask = StartCommunicationAsync(stoppingToken);
 
         State = ClientState.Connected;
@@ -79,7 +72,7 @@ internal sealed class NetworkClient : INetworkClient
         }
     }
 
-    public string Name { get; private set; }
+    public string Name { get; }
     
 
     public void EnqueueMessage(SocketMessage socketMessage) 

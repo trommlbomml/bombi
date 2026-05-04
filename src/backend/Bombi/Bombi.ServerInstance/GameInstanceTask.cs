@@ -27,7 +27,7 @@ public sealed class GameInstanceTask
         _factory = new SocketMessageFactory();
         _tickTime = TimeSpan.FromSeconds(1.0 / settings.TickRate);
         _gameInstance = new GameInstance();
-        Task = RunGameInstanceAsync(cancellationToken);
+        Task = Task.Run(() => RunGameInstanceAsync(cancellationToken));
     }
 
     public Task Task { get; }

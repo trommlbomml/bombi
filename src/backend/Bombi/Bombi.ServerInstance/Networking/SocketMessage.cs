@@ -18,6 +18,8 @@ public interface ISerializerTarget
 
 public sealed class SocketMessage : ISerializerTarget
 {
+    private const int MaxMessageLength = 1014;
+    
     public static readonly SocketMessage Empty = new (SocketMessageFactory.Empty, 0);
     
     private readonly SocketMessageFactory _factory;
@@ -25,7 +27,7 @@ public sealed class SocketMessage : ISerializerTarget
     
     private int _length;
 
-    public SocketMessage(SocketMessageFactory factory) : this(factory, 128)
+    public SocketMessage(SocketMessageFactory factory) : this(factory, MaxMessageLength)
     {
     }
 

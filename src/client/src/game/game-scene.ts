@@ -9,6 +9,7 @@ import {
 } from "./constants.ts";
 import {Level} from "./level.ts";
 import {createFigureAnimations, Figure} from "./figure.ts";
+import {gameClient} from "../instrumentation/networking/game-client.ts";
 
 export default class GameScene extends Phaser.Scene {
   private level!: Level;
@@ -42,5 +43,10 @@ export default class GameScene extends Phaser.Scene {
     const elapsedSeconds = delta / 1000;
     this.level.update(elapsedSeconds);
     this.figure.update(elapsedSeconds);
+
+    const message = gameClient.getNextMessage();
+    if (message) {
+      this.level.sync(message);
+    }
   }
 }

@@ -21,36 +21,20 @@ addEventListener('message', (e) => {
             webSocket = new WebSocket(message.url);
             webSocket.binaryType = 'arraybuffer';
         } catch {
-            postMessage({
-                type: 'socket-open-failed',
-            });
+            postMessage('socket-open-failed');
             cleanup();
             return;
         }
 
         webSocket.onopen = () => {
-            postMessage({
-                type: 'socket-open',
-            });
+            postMessage('socket-open');
         };
         webSocket.onclose = () => {
-            postMessage({
-                type: 'socket-closed',
-            });
+            postMessage('socket-closed');
             cleanup();
         };
         webSocket.onmessage = (e) => {
-            if (e.data instanceof ArrayBuffer) {
-                postMessage({
-                    type: 'socket-message',
-                    data: e.data,
-                }, [e.data]);
-            } else {
-                postMessage({
-                    type: 'socket-message',
-                    data: e.data,
-                });
-            }
+            postMessage(e.data,  [e.data ]);
         };
     } else if (message.type === 'send') {
         webSocket.send(message.data);

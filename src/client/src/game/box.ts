@@ -13,4 +13,16 @@ export class Box {
         this.sprite.setDepth(LAYER_FRINGE);
         container.add(this.sprite);
     }
+    
+    get visible(): boolean {
+        return this.sprite.visible;
+    }
+
+    show() {
+        this.sprite.visible = false;
+    }
+
+    hide() {
+        this.sprite.visible = false;
+    }
 }
